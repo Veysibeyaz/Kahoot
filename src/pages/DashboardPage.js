@@ -41,15 +41,14 @@ const DashboardPage = () => {
     navigate('/my-quizzes');
   };
 
-  const handleJoinGame = () => {
-    if (gamePin.trim()) {
-      // Girilen PIN ile oyuna katılma sayfasına yönlendir
-      navigate(`/join-game/${gamePin.trim()}`);
-    } else {
-      // PIN girilmemişse genel join sayfasına yönlendir
-      navigate('/join-game');
-    }
-  };
+ const handleJoinGame = () => {
+  if (gamePin.trim()) {
+    console.log('Joining game with code:', gamePin.trim()); // Debug için
+    navigate(`/join-game/${gamePin.trim()}`);
+  } else {
+    alert('Lütfen bir oyun kodu girin!');
+  }
+};
 
   if (loading) {
     return (

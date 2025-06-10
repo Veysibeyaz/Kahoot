@@ -1,0 +1,291 @@
+/* src/pages/GamePage.css */
+.game-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  flex-direction: column;
+}
+
+.loading-screen, .error-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-text {
+  color: white;
+  font-size: 1.25rem;
+}
+
+.error-content {
+  text-align: center;
+  color: white;
+}
+
+.error-content h2 {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+.error-content p {
+  margin-bottom: 1rem;
+}
+
+.back-button {
+  background: white;
+  color: #667eea;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+}
+
+/* Header */
+.game-header {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.game-title {
+  color: white;
+  font-weight: bold;
+  font-size: 1.25rem;
+}
+
+.question-counter {
+  color: white;
+  font-size: 0.875rem;
+  opacity: 0.8;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.score-display {
+  color: white;
+  text-align: right;
+}
+
+.score-label {
+  font-size: 0.875rem;
+  opacity: 0.8;
+}
+
+.score-value {
+  font-size: 1.25rem;
+  font-weight: bold;
+}
+
+.timer-container {
+  position: relative;
+}
+
+.timer-circle {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.timer-green {
+  color: #10b981;
+}
+
+.timer-yellow {
+  color: #f59e0b;
+}
+
+.timer-red {
+  color: #ef4444;
+}
+
+/* Main Content */
+.game-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.question-container {
+  width: 100%;
+  max-width: 64rem;
+  margin-bottom: 3rem;
+}
+
+.question-box {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.question-text {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #374151;
+  text-align: center;
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* Options Grid */
+.options-grid {
+  width: 100%;
+  max-width: 72rem;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .options-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .question-text {
+    font-size: 2.5rem;
+  }
+}
+
+.option-button {
+  border-radius: 1rem;
+  padding: 1.5rem;
+  color: white;
+  font-weight: bold;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 100px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.option-button:hover:not(.disabled) {
+  transform: scale(1.05);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.option-button.selected {
+  transform: scale(1.05);
+  box-shadow: 0 0 0 4px white;
+}
+
+.option-button.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.option-red {
+  background: #ef4444;
+}
+
+.option-blue {
+  background: #3b82f6;
+}
+
+.option-yellow {
+  background: #f59e0b;
+}
+
+.option-green {
+  background: #10b981;
+}
+
+.option-gray {
+  background: #6b7280;
+}
+
+.option-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.option-letter {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 900;
+}
+
+.option-text {
+  text-align: left;
+}
+
+.check-mark {
+  font-size: 2rem;
+}
+
+/* Bottom Info */
+.bottom-info {
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.info-text {
+  color: white;
+  font-size: 1.125rem;
+  opacity: 0.8;
+  margin: 0;
+}
+
+.info-text.bold {
+  font-weight: bold;
+  opacity: 1;
+}
+
+/* Progress Bar */
+.progress-container {
+  background: rgba(255, 255, 255, 0.1);
+  height: 0.5rem;
+}
+
+.progress-bar {
+  background: white;
+  height: 100%;
+  transition: width 1s linear;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.timer-circle {
+  animation: pulse 1s ease-in-out infinite;
+}
