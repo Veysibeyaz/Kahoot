@@ -14,7 +14,7 @@ const LobbyPage = () => {
   const [gameDetails, setGameDetails] = useState(null); // Oyun detayları (host bilgisi vb. için)
   const [isLoading, setIsLoading] = useState(true); // Sayfa yüklenirken true
   const [error, setError] = useState(null); // Hata mesajları için
-
+ 
   // Mevcut kullanıcının host olup olmadığını kontrol et
   // Bu, gameDetails içindeki hostId ile currentUser.id karşılaştırılarak yapılmalı.
   // Şimdilik MOCK_CURRENT_USER_ID ve gameDetails.hostId (eğer varsa) üzerinden gidiyoruz.

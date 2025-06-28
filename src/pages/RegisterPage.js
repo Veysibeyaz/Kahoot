@@ -2,9 +2,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import authService from '../services/authService';
+import QuizMasterLogo from '../components/QuizMasterLogo';
 import './AuthForm.css';
 import './RegisterPage.css';
-import logo from '../assets/logo.png'; // veya quiz.png
 
 const RegisterPage = () => {
   const [username, setUsername] = useState('');
@@ -17,47 +17,45 @@ const RegisterPage = () => {
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  setError('');
-  setSuccess('');
-  setLoading(true);
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setLoading(true);
 
-  // Basit doğrulama
-  if (!username || !email || !password || !confirmPassword) {
-    setError('Please fill in all fields.');
-    setLoading(false);
-    return;
-  }
+    // Basit doğrulama
+    if (!username || !email || !password || !confirmPassword) {
+      setError('Please fill in all fields.');
+      setLoading(false);
+      return;
+    }
 
-  if (password !== confirmPassword) {
-    setError('Passwords do not match.');
-    setLoading(false);
-    return;
-  }
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      setLoading(false);
+      return;
+    }
 
-  try {
-    // userData değişkenini burada tanımlayın
-    const userData = { username, email, password };
-    
-    await authService.register(userData);
-    setSuccess('Registration successful! Redirecting to login...');
-    
-    // 2 saniye sonra login sayfasına yönlendir
-    setTimeout(() => {
-      navigate('/login');
-    }, 2000);
-  } catch (apiError) {
-    setError(apiError.message || 'Registration failed. Please try again.');
-  } finally {
-    setLoading(false);
-  }
-};
+    try {
+      const userData = { username, email, password };
+      await authService.register(userData);
+      setSuccess('Registration successful! Redirecting to login...');
+      
+      // 2 saniye sonra login sayfasına yönlendir
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
+    } catch (apiError) {
+      setError(apiError.message || 'Registration failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="auth-container register-page-container">
       <div className="auth-form-card">
         <Link to="/" className="auth-logo-link">
-          <img src={logo} alt="QuizMaster Logo" className="auth-logo" />
+          <QuizMasterLogo size={50} className="auth-logo" />
           <h2>QuizMaster</h2>
         </Link>
         <h3>Create Account</h3>

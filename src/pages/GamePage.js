@@ -1,7 +1,9 @@
-// src/pages/GamePage.js - Complete Updated Version with Socket.IO
+// src/pages/GamePage.js - Updated with Audio Support
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import authService from '../services/authService';
+import audioService from '../services/audioService';
+import AudioControls from '../components/AudioControls';
 import io from 'socket.io-client';
 import './GamePage.css';
 
@@ -34,6 +36,29 @@ const GamePage = () => {
   
   // Socket.IO state
   const [socket, setSocket] = useState(null);
+
+  // Audio initialization
+  useEffect(() => {
+    // User interaction ile audio context'i başlat
+    const initAudio = () => {
+      audioService.initAudioContext();
+      audioService.playBackgroundMusic();
+      
+      // Event listener'ı kaldır
+      document.removeEventListener('click', initAudio);
+      document.removeEventListener('keydown', initAudio);
+    };
+
+    // İlk user interaction'da audio'yu başlat
+    document.addEventListener('click', initAudio);
+    document.addEventListener('keydown', initAudio);
+
+    return () => {
+      document.removeEventListener('click', initAudio);
+      document.removeEventListener('keydown', initAudio);
+      audioService.stopBackgroundMusic();
+    };
+  }, []);
 
   // Authentication check
   useEffect(() => {
@@ -85,6 +110,9 @@ const GamePage = () => {
       setScoreboard(data.scoreboard);
       setGameState('scoreboard');
       setNextQuestionTimer(4);
+      
+      // Scoreboard ses efekti
+      audioService.playNextQuestionSound();
     });
 
     // Sonraki soru
@@ -99,6 +127,9 @@ const GamePage = () => {
       setScoreGained(0);
       setShowAnswerFeedback(false);
       setGameState('question');
+      
+      // Yeni soru ses efekti
+      audioService.playNextQuestionSound();
     });
 
     // Oyun bitti
@@ -106,6 +137,10 @@ const GamePage = () => {
       console.log('Game finished:', data);
       setScoreboard(data.finalScoreboard);
       setGameState('finished');
+      
+      // Oyun bitiş ses efekti
+      audioService.playGameEndSound();
+      audioService.stopBackgroundMusic();
     });
 
     newSocket.on('connect_error', (error) => {
@@ -138,6 +173,8 @@ const GamePage = () => {
           if (data.gameState === 'finished' && gameState !== 'finished') {
             setGameState('finished');
             fetchFinalScoreboard();
+            audioService.playGameEndSound();
+            audioService.stopBackgroundMusic();
             return;
           }
 
@@ -153,6 +190,9 @@ const GamePage = () => {
             setScoreGained(0);
             setShowAnswerFeedback(false);
             setGameState('question');
+            
+            // Yeni soru ses efekti
+            audioService.playNextQuestionSound();
             console.log('New question received via polling:', newQuestion.questionText);
           }
 
@@ -215,11 +255,18 @@ const GamePage = () => {
       if (data.gameState === 'finished') {
         setGameState('finished');
         setScoreboard(data.scoreboard || []);
+        audioService.playGameEndSound();
+        audioService.stopBackgroundMusic();
       } else if (data.quiz && data.quiz.questions && data.quiz.questions.length > 0) {
         const currentQ = data.quiz.questions[data.currentQuestionIndex || 0];
         setCurrentQuestion(currentQ);
         setQuestionIndex(data.currentQuestionIndex || 0);
         setTimeLeft(currentQ?.timeLimit || 15);
+        
+        // İlk soru başladığında oyun başlama sesi
+        if ((data.currentQuestionIndex || 0) === 0) {
+          audioService.playGameStartSound();
+        }
       }
       
       setError(null);
@@ -250,6 +297,7 @@ const GamePage = () => {
           setScoreboard(data.scoreboard);
           setGameState('scoreboard');
           setNextQuestionTimer(4);
+          audioService.playNextQuestionSound();
           console.log('Scoreboard received via polling');
         }
       }
@@ -280,6 +328,9 @@ const GamePage = () => {
   const submitAnswer = useCallback(async (answerIndex, timeSpent) => {
     if (!token || !currentQuestion) return;
 
+    // Click ses efekti
+    audioService.playClickSound();
+
     try {
       const response = await fetch(`http://localhost:5000/api/games/${gameCode}/answer`, {
         method: 'POST',
@@ -304,12 +355,20 @@ const GamePage = () => {
         setScore(result.newScore || score);
         setShowAnswerFeedback(true);
         
+        // Cevap sonucuna göre ses çal
+        if (result.isCorrect) {
+          audioService.playCorrectSound();
+        } else {
+          audioService.playWrongSound();
+        }
+        
         // 2 saniye sonra scoreboard'a geç veya bekle
         setTimeout(() => {
           if (result.scoreboard) {
             setScoreboard(result.scoreboard);
             setGameState('scoreboard');
             setNextQuestionTimer(4); // 4 saniye scoreboard göster
+            audioService.playNextQuestionSound();
           } else {
             setGameState('waiting');
           }
@@ -335,6 +394,9 @@ const GamePage = () => {
   // Handle timeout
   const handleTimeout = useCallback(async () => {
     if (!token || !currentQuestion || selectedAnswer !== null) return;
+
+    // Zaman doldu ses efekti
+    audioService.playTimeUpSound();
 
     try {
       const response = await fetch(`http://localhost:5000/api/games/${gameCode}/answer`, {
@@ -364,6 +426,7 @@ const GamePage = () => {
             setScoreboard(result.scoreboard);
             setGameState('scoreboard');
             setNextQuestionTimer(4);
+            audioService.playNextQuestionSound();
           } else {
             setGameState('waiting');
           }
@@ -394,6 +457,8 @@ const GamePage = () => {
           // Oyun bitti
           setGameState('finished');
           setScoreboard(result.finalScoreboard || scoreboard);
+          audioService.playGameEndSound();
+          audioService.stopBackgroundMusic();
         } else {
           // Sonraki soru
           setCurrentQuestion(result.question);
@@ -405,6 +470,9 @@ const GamePage = () => {
           setScoreGained(0);
           setShowAnswerFeedback(false);
           setGameState('question');
+          
+          // Yeni soru ses efekti
+          audioService.playNextQuestionSound();
         }
       }
     } catch (err) {
@@ -412,10 +480,20 @@ const GamePage = () => {
     }
   }, [token, gameCode, scoreboard]);
 
-  // Timer effect
+  // Timer effect with sound
   useEffect(() => {
     if (timeLeft > 0 && gameState === 'question' && selectedAnswer === null) {
-      const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
+      const timer = setTimeout(() => {
+        setTimeLeft(timeLeft - 1);
+        
+        // Timer ses efektleri
+        if (timeLeft <= 5 && timeLeft > 1) {
+          audioService.playWarningSound(); // Son 5 saniyede uyarı sesi
+        } else if (timeLeft > 5 && timeLeft % 5 === 0) {
+          audioService.playTickSound(); // Her 5 saniyede tick sesi
+        }
+      }, 1000);
+      
       return () => clearTimeout(timer);
     } else if (timeLeft === 0 && gameState === 'question' && selectedAnswer === null) {
       handleTimeout();
@@ -425,7 +503,15 @@ const GamePage = () => {
   // Next question timer effect
   useEffect(() => {
     if (nextQuestionTimer > 0 && gameState === 'scoreboard') {
-      const timer = setTimeout(() => setNextQuestionTimer(nextQuestionTimer - 1), 1000);
+      const timer = setTimeout(() => {
+        setNextQuestionTimer(nextQuestionTimer - 1);
+        
+        // Geri sayım sesi (son 3 saniye)
+        if (nextQuestionTimer <= 3) {
+          audioService.playTickSound();
+        }
+      }, 1000);
+      
       return () => clearTimeout(timer);
     } else if (nextQuestionTimer === 0 && gameState === 'scoreboard') {
       moveToNextQuestion();
@@ -496,7 +582,10 @@ const GamePage = () => {
           <h2>Hata</h2>
           <p>{error}</p>
           <button 
-            onClick={() => navigate('/dashboard')}
+            onClick={() => {
+              audioService.playClickSound();
+              navigate('/dashboard');
+            }}
             className="back-button"
           >
             Dashboard'a Dön
@@ -513,6 +602,9 @@ const GamePage = () => {
     
     return (
       <div className="game-container">
+        {/* Audio Controls */}
+        <AudioControls showInGame={true} />
+        
         <div className="game-content">
           <div className="finished-container">
             <h1 className="finished-title">🎉 Oyun Bitti! 🎉</h1>
@@ -522,13 +614,10 @@ const GamePage = () => {
               <div className="scoreboard-list">
                 {sortedPlayers.map((player, index) => {
                   const playerId = player.userId._id || player.userId;
-                  // Frontend Fallback - username alma mantığı iyileştirildi
                   const playerUsername = player.username || 
                                        player.userId?.username || 
                                        (typeof player.userId === 'object' ? player.userId.username : null) ||
                                        `Oyuncu ${index + 1}`;
-                  
-                  console.log('Final scoreboard player data:', { player, playerUsername }); // Debug
                   
                   return (
                     <div 
@@ -554,7 +643,10 @@ const GamePage = () => {
             </div>
             
             <button 
-              onClick={() => navigate('/dashboard')}
+              onClick={() => {
+                audioService.playClickSound();
+                navigate('/dashboard');
+              }}
               className="back-to-dashboard"
             >
               Dashboard'a Dön
@@ -572,6 +664,9 @@ const GamePage = () => {
     
     return (
       <div className="game-container">
+        {/* Audio Controls */}
+        <AudioControls showInGame={true} />
+        
         <header className="game-header">
           <div className="header-left">
             <div className="game-title">QuizMaster</div>
@@ -605,13 +700,10 @@ const GamePage = () => {
             <div className="scoreboard-list">
               {sortedPlayers.map((player, index) => {
                 const playerId = player.userId._id || player.userId;
-                // Frontend Fallback - username alma mantığı iyileştirildi
                 const playerUsername = player.username || 
                                      player.userId?.username || 
                                      (typeof player.userId === 'object' ? player.userId.username : null) ||
                                      `Oyuncu ${index + 1}`;
-                
-                console.log('Scoreboard player data:', { player, playerUsername }); // Debug
                 
                 return (
                   <div 
@@ -652,6 +744,9 @@ const GamePage = () => {
   if (gameState === 'waiting') {
     return (
       <div className="game-container">
+        {/* Audio Controls */}
+        <AudioControls showInGame={true} />
+        
         <header className="game-header">
           <div className="header-left">
             <div className="game-title">QuizMaster</div>
@@ -707,6 +802,9 @@ const GamePage = () => {
 
   return (
     <div className="game-container">
+      {/* Audio Controls */}
+      <AudioControls showInGame={true} />
+      
       <header className="game-header">
         <div className="header-left">
           <div className="game-title">QuizMaster</div>
@@ -743,6 +841,11 @@ const GamePage = () => {
             <button
               key={index}
               onClick={() => handleAnswerSelect(index)}
+              onMouseEnter={() => {
+                if (gameState === 'question' && timeLeft > 0 && selectedAnswer === null) {
+                  audioService.playHoverSound();
+                }
+              }}
               disabled={gameState !== 'question' || timeLeft === 0 || selectedAnswer !== null}
               className={getOptionClass(index)}
             >

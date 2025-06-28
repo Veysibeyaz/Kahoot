@@ -1,7 +1,9 @@
-// src/pages/LobbyPage.js
+// src/pages/LobbyPage.js - Updated with Audio Support
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import authService from '../services/authService';
+import audioService from '../services/audioService';
+import AudioControls from '../components/AudioControls';
 import './LobbyPage.css';
 
 const LobbyPage = () => {
@@ -14,11 +16,29 @@ const LobbyPage = () => {
   const [hasJoined, setHasJoined] = useState(false);
   const [showHostWarning, setShowHostWarning] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
+  const [previousPlayerCount, setPreviousPlayerCount] = useState(0);
 
   // Current user bilgilerini al
   const currentUser = authService.getCurrentUser();
   const token = authService.getCurrentUserToken();
   
+  // Audio initialization
+  useEffect(() => {
+    const initAudio = () => {
+      audioService.initAudioContext();
+      document.removeEventListener('click', initAudio);
+      document.removeEventListener('keydown', initAudio);
+    };
+
+    document.addEventListener('click', initAudio);
+    document.addEventListener('keydown', initAudio);
+
+    return () => {
+      document.removeEventListener('click', initAudio);
+      document.removeEventListener('keydown', initAudio);
+    };
+  }, []);
+
   // Kullanıcı giriş yapmamışsa login'e yönlendir
   useEffect(() => {
     if (!token || !currentUser) {
@@ -28,6 +48,18 @@ const LobbyPage = () => {
   }, [token, currentUser, navigate]);
 
   const isHost = gameDetails && gameDetails.hostId === currentUser?._id;
+
+  // Oyuncu sayısı değişikliklerini izle (ses efekti için)
+  useEffect(() => {
+    if (players.length > previousPlayerCount && previousPlayerCount > 0) {
+      // Yeni oyuncu katıldı
+      audioService.playJoinSound();
+    } else if (players.length < previousPlayerCount && previousPlayerCount > 0) {
+      // Oyuncu ayrıldı
+      audioService.playLeaveSound();
+    }
+    setPreviousPlayerCount(players.length);
+  }, [players.length, previousPlayerCount]);
 
   // Oyun verilerini çek
   const fetchGameData = useCallback(async () => {
@@ -63,6 +95,8 @@ const LobbyPage = () => {
       // OYUN BAŞLAMIŞ MI KONTROL ET
       if (data.state === 'active' || data.gameState === 'in-progress') {
         console.log('Game is active, redirecting to game page...');
+        // Oyun başlama ses efekti
+        audioService.playGameStartSound();
         navigate(`/game/${gameCode}`);
         return;
       }
@@ -109,6 +143,9 @@ const LobbyPage = () => {
         console.log('Successfully joined game:', data);
         setHasJoined(true);
         
+        // Oyuna katılma ses efekti
+        audioService.playJoinSound();
+        
         // Eğer zaten oyundaysak (alreadyJoined flag'i varsa)
         if (data.alreadyJoined) {
           console.log('Already in game');
@@ -120,11 +157,13 @@ const LobbyPage = () => {
         console.error('Failed to join game:', data.message);
         if (data.message !== 'Bu oyuna zaten katıldınız.' && 
             data.message !== 'Zaten oyundasınız') {
+          audioService.playWrongSound();
           alert(data.message || 'Oyuna katılırken bir hata oluştu');
         }
       }
     } catch (error) {
       console.error('Error joining game:', error);
+      audioService.playWrongSound();
       alert('Oyuna katılırken bir hata oluştu');
     } finally {
       setIsJoining(false);
@@ -157,9 +196,13 @@ const LobbyPage = () => {
   const handleStartGame = async () => {
     if (!token) return;
     
+    // Click ses efekti
+    audioService.playClickSound();
+    
     // Host değilse uyarı göster
     if (!isHost) {
       setShowHostWarning(true);
+      audioService.playWarningSound();
       setTimeout(() => setShowHostWarning(false), 3000);
       return;
     }
@@ -182,10 +225,14 @@ const LobbyPage = () => {
       const gameData = await response.json();
       console.log('Game started successfully:', gameData);
       
+      // Oyun başlama ses efekti
+      audioService.playGameStartSound();
+      
       // Oyun başarıyla başladıysa direkt yönlendir
       navigate(`/game/${gameCode}`);
     } catch (err) {
       console.error('Oyunu başlatma hatası:', err);
+      audioService.playWrongSound();
       alert('Oyunu başlatırken hata oluştu: ' + err.message);
     } finally {
       setIsLoading(false);
@@ -193,7 +240,13 @@ const LobbyPage = () => {
   };
 
   const handleLeaveGame = () => {
+    // Leave ses efekti
+    audioService.playLeaveSound();
     navigate('/dashboard');
+  };
+
+  const handleButtonHover = () => {
+    audioService.playHoverSound();
   };
 
   if (isLoading && !gameDetails) {
@@ -233,7 +286,11 @@ const LobbyPage = () => {
           
           <div className="action-buttons">
             <button 
-              onClick={() => navigate('/dashboard')}
+              onClick={() => {
+                audioService.playClickSound();
+                navigate('/dashboard');
+              }}
+              onMouseEnter={handleButtonHover}
               className="action-button leave-button"
             >
               <span className="button-icon">🏠</span>
@@ -241,9 +298,11 @@ const LobbyPage = () => {
             </button>
             <button 
               onClick={() => {
+                audioService.playClickSound();
                 setError(null);
                 fetchGameData();
               }}
+              onMouseEnter={handleButtonHover}
               className="action-button start-button"
             >
               <span className="button-icon">🔄</span>
@@ -258,6 +317,9 @@ const LobbyPage = () => {
   // TEK TASARIM - HOST VE OYUNCU İÇİN
   return (
     <div className="player-waiting-room">
+      {/* Audio Controls */}
+      <AudioControls showInGame={true} />
+      
       {/* Host Uyarı Mesajı */}
       {showHostWarning && (
         <div className="host-warning-popup">
@@ -365,6 +427,7 @@ const LobbyPage = () => {
         <div className="action-buttons">
           <button 
             onClick={handleLeaveGame}
+            onMouseEnter={handleButtonHover}
             className="action-button leave-button"
           >
             <span className="button-icon">🚪</span>
@@ -373,6 +436,7 @@ const LobbyPage = () => {
           
           <button
             onClick={handleStartGame}
+            onMouseEnter={handleButtonHover}
             disabled={isHost && (isLoading || players.length < 1)}
             className={`action-button ${
               isHost 
