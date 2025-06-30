@@ -1,14 +1,16 @@
 {
-  "name": "kahoot",
+  "name": "kahoot-backend",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "keywords": ["kahoot", "quiz", "backend", "api"],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "Kahoot Clone Backend API",
   "dependencies": {
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
@@ -20,5 +22,8 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.9"
+  },
+  "engines": {
+    "node": ">=16.0.0"
   }
 }
